@@ -1,6 +1,6 @@
 ---
 # Common role defaults
-# 이 값들은 group_vars/all.yml에서 오버라이드됩니다.
+# 이 값들은 group_vars/all.yaml에서 오버라이드됩니다.
 
 install_dir: /opt/monitoring
 config_dir: /etc/monitoring

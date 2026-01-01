@@ -3,7 +3,7 @@
 # Prometheus, Alertmanager, Grafana를 Control Node에 설치합니다.
 #
 # 사용법:
-#   ansible-playbook -i inventory/hosts.yml playbooks/install-control.yml
+#   ansible-playbook -i inventory/hosts.yaml playbooks/install-control.yaml
 
 - name: Apply common configuration to control node
   hosts: control
@@ -45,4 +45,4 @@
           Prometheus:   http://{{ ansible_host }}:{{ prometheus_port }}
           Alertmanager: http://{{ ansible_host }}:{{ alertmanager_port }}
 
-          Next: Run install-gpu-nodes.yml to set up GPU node exporters.
+          Next: Run install-gpu-nodes.yaml to set up GPU node exporters.

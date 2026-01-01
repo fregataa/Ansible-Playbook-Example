@@ -87,8 +87,8 @@
 # Prometheus 데이터소스 프로비저닝
 - name: Provision Prometheus datasource
   template:
-    src: datasource-prometheus.yml.j2
-    dest: "{{ grafana_provisioning_dir }}/datasources/prometheus.yml"
+    src: datasource-prometheus.yaml.j2
+    dest: "{{ grafana_provisioning_dir }}/datasources/prometheus.yaml"
     mode: '0644'
     owner: monitoring
     group: monitoring
@@ -98,8 +98,8 @@
 # 대시보드 프로비저닝 설정
 - name: Provision dashboard configuration
   template:
-    src: dashboard-provider.yml.j2
-    dest: "{{ grafana_provisioning_dir }}/dashboards/default.yml"
+    src: dashboard-provider.yaml.j2
+    dest: "{{ grafana_provisioning_dir }}/dashboards/default.yaml"
     mode: '0644'
     owner: monitoring
     group: monitoring

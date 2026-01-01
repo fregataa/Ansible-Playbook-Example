@@ -69,8 +69,8 @@
 
 - name: Create Prometheus configuration
   template:
-    src: prometheus.yml.j2
-    dest: "{{ prometheus_config_dir }}/prometheus.yml"
+    src: prometheus.yaml.j2
+    dest: "{{ prometheus_config_dir }}/prometheus.yaml"
     mode: '0644'
     owner: monitoring
     group: monitoring
@@ -80,8 +80,8 @@
 
 - name: Create GPU alert rules
   template:
-    src: gpu-alerts.yml.j2
-    dest: "{{ prometheus_config_dir }}/rules/gpu-alerts.yml"
+    src: gpu-alerts.yaml.j2
+    dest: "{{ prometheus_config_dir }}/rules/gpu-alerts.yaml"
     mode: '0644'
     owner: monitoring
     group: monitoring
@@ -90,8 +90,8 @@
 
 - name: Create system alert rules
   template:
-    src: system-alerts.yml.j2
-    dest: "{{ prometheus_config_dir }}/rules/system-alerts.yml"
+    src: system-alerts.yaml.j2
+    dest: "{{ prometheus_config_dir }}/rules/system-alerts.yaml"
     mode: '0644'
     owner: monitoring
     group: monitoring

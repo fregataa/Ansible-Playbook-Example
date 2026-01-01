@@ -2,11 +2,11 @@
 # GPU Cluster Monitoring Stack - Main Playbook
 #
 # 사용법:
-#   전체 설치:     ansible-playbook -i inventory/hosts.yml playbooks/site.yml
-#   Control만:    ansible-playbook -i inventory/hosts.yml playbooks/site.yml --tags control
-#   GPU 노드만:   ansible-playbook -i inventory/hosts.yml playbooks/site.yml --tags gpu_nodes
-#   특정 컴포넌트: ansible-playbook -i inventory/hosts.yml playbooks/site.yml --tags prometheus
-#   Dry-run:      ansible-playbook -i inventory/hosts.yml playbooks/site.yml --check
+#   전체 설치:     ansible-playbook -i inventory/hosts.yaml playbooks/site.yaml
+#   Control만:    ansible-playbook -i inventory/hosts.yaml playbooks/site.yaml --tags control
+#   GPU 노드만:   ansible-playbook -i inventory/hosts.yaml playbooks/site.yaml --tags gpu_nodes
+#   특정 컴포넌트: ansible-playbook -i inventory/hosts.yaml playbooks/site.yaml --tags prometheus
+#   Dry-run:      ansible-playbook -i inventory/hosts.yaml playbooks/site.yaml --check
 #
 # 태그 목록:
 #   - common: 공통 설정 (디렉토리, 방화벽 등)
@@ -84,20 +84,20 @@
           Access URLs:
             Grafana:      http://{{ ansible_host }}:{{ grafana_port }}
                           Username: {{ grafana_admin_user }}
-                          Password: (configured in group_vars/all.yml)
+                          Password: (configured in group_vars/all.yaml)
 
             Prometheus:   http://{{ ansible_host }}:{{ prometheus_port }}
 
             Alertmanager: http://{{ ansible_host }}:{{ alertmanager_port }}
 
           Quick Commands:
-            Check status:    ansible -i inventory/hosts.yml all -m shell -a "systemctl status node_exporter"
-            View GPU nodes:  ansible -i inventory/hosts.yml gpu_nodes -m shell -a "nvidia-smi"
+            Check status:    ansible -i inventory/hosts.yaml all -m shell -a "systemctl status node_exporter"
+            View GPU nodes:  ansible -i inventory/hosts.yaml gpu_nodes -m shell -a "nvidia-smi"
 
           Next Steps:
             1. Access Grafana and explore GPU dashboards
-            2. Configure alert notifications in group_vars/all.yml
-            3. Add more GPU nodes to inventory/hosts.yml
+            2. Configure alert notifications in group_vars/all.yaml
+            3. Add more GPU nodes to inventory/hosts.yaml
 
           ============================================================
       tags: [always]

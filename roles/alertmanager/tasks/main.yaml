@@ -54,8 +54,8 @@
 
 - name: Create Alertmanager configuration
   template:
-    src: alertmanager.yml.j2
-    dest: "{{ alertmanager_config_dir }}/alertmanager.yml"
+    src: alertmanager.yaml.j2
+    dest: "{{ alertmanager_config_dir }}/alertmanager.yaml"
     mode: '0640'
     owner: monitoring
     group: monitoring

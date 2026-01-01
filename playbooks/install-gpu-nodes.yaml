@@ -3,8 +3,8 @@
 # Node Exporter와 DCGM Exporter를 GPU 노드에 설치합니다.
 #
 # 사용법:
-#   전체:        ansible-playbook -i inventory/hosts.yml playbooks/install-gpu-nodes.yml
-#   특정 노드만: ansible-playbook -i inventory/hosts.yml playbooks/install-gpu-nodes.yml --limit gpu-node-01
+#   전체:        ansible-playbook -i inventory/hosts.yaml playbooks/install-gpu-nodes.yaml
+#   특정 노드만: ansible-playbook -i inventory/hosts.yaml playbooks/install-gpu-nodes.yaml --limit gpu-node-01
 
 - name: Apply common configuration to GPU nodes
   hosts: gpu_nodes
@@ -29,8 +29,8 @@
   tasks:
     - name: Regenerate Prometheus config with new targets
       template:
-        src: ../roles/prometheus/templates/prometheus.yml.j2
-        dest: "{{ prometheus_config_dir }}/prometheus.yml"
+        src: ../roles/prometheus/templates/prometheus.yaml.j2
+        dest: "{{ prometheus_config_dir }}/prometheus.yaml"
         mode: '0644'
         owner: monitoring
         group: monitoring

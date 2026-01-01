@@ -26,7 +26,7 @@ Thumbs.db
 secrets/
 vault_password
 *.vault
-group_vars/all.yml.bak
+group_vars/all.yaml.bak
 
 # Python
 __pycache__/

@@ -1,6 +1,6 @@
 ---
 # Ansible Galaxy Requirements
-# 사용법: ansible-galaxy install -r requirements.yml
+# 사용법: ansible-galaxy install -r requirements.yaml
 
 collections:
   # 커뮤니티 일반 모듈

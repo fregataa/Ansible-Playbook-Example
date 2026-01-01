@@ -51,12 +51,12 @@ Ansible은 서버 구성 관리 및 자동화 도구입니다. SSH를 통해 원
 
 | 용어 | 설명 | 예시 |
 |------|------|------|
-| **Inventory** | 관리할 서버 목록 | `inventory/hosts.yml` |
-| **Playbook** | 실행할 작업들의 정의 | `playbooks/site.yml` |
+| **Inventory** | 관리할 서버 목록 | `inventory/hosts.yaml` |
+| **Playbook** | 실행할 작업들의 정의 | `playbooks/site.yaml` |
 | **Role** | 재사용 가능한 작업 모음 | `roles/prometheus/` |
 | **Task** | 개별 작업 단위 | 패키지 설치, 파일 복사 등 |
 | **Handler** | 특정 조건에서 실행되는 작업 | 서비스 재시작 |
-| **Template** | 변수가 포함된 설정 파일 | `prometheus.yml.j2` |
+| **Template** | 변수가 포함된 설정 파일 | `prometheus.yaml.j2` |
 | **Variable** | 설정값을 저장하는 변수 | `prometheus_version: "2.47.0"` |
 
 ### 디렉토리 구조 설명
@@ -64,25 +64,25 @@ Ansible은 서버 구성 관리 및 자동화 도구입니다. SSH를 통해 원
 ```
 ansible-prometheus-stack/
 ├── inventory/
-│   └── hosts.yml           # 서버 목록 (어디에 설치할지)
+│   └── hosts.yaml           # 서버 목록 (어디에 설치할지)
 │
 ├── group_vars/
-│   └── all.yml             # 모든 서버에 적용할 변수
+│   └── all.yaml             # 모든 서버에 적용할 변수
 │
 ├── roles/                  # 역할별 작업 모음
 │   ├── prometheus/
 │   │   ├── tasks/          # 실행할 작업들
-│   │   │   └── main.yml
+│   │   │   └── main.yaml
 │   │   ├── templates/      # 설정 파일 템플릿
-│   │   │   └── prometheus.yml.j2
+│   │   │   └── prometheus.yaml.j2
 │   │   ├── handlers/       # 서비스 재시작 등
-│   │   │   └── main.yml
+│   │   │   └── main.yaml
 │   │   └── defaults/       # 기본 변수값
-│   │       └── main.yml
+│   │       └── main.yaml
 │   └── ...
 │
 ├── playbooks/
-│   └── site.yml            # 메인 실행 파일
+│   └── site.yaml            # 메인 실행 파일
 │
 └── files/                  # 정적 파일 (대시보드 JSON 등)
 ```
@@ -149,7 +149,7 @@ ssh-copy-id root@gpu-node-02
 
 ### 1단계: 인벤토리 수정
 
-`inventory/hosts.yml` 파일을 실제 환경에 맞게 수정합니다:
+`inventory/hosts.yaml` 파일을 실제 환경에 맞게 수정합니다:
 
 ```yaml
 all:
@@ -170,7 +170,7 @@ all:
 
 ### 2단계: 변수 설정
 
-`group_vars/all.yml` 파일에서 환경에 맞게 변수를 수정합니다:
+`group_vars/all.yaml` 파일에서 환경에 맞게 변수를 수정합니다:
 
 ```yaml
 # 알람 수신 설정 (필수)
@@ -191,7 +191,7 @@ grafana_admin_password: "your-secure-password"
 cd examples/ansible-prometheus-stack
 
 # 모든 서버에 ping 테스트
-ansible -i inventory/hosts.yml all -m ping
+ansible -i inventory/hosts.yaml all -m ping
 
 # 예상 출력:
 # gpu-node-01 | SUCCESS => {"ping": "pong"}
@@ -202,17 +202,17 @@ ansible -i inventory/hosts.yml all -m ping
 
 ```bash
 # 전체 설치 (권장)
-ansible-playbook -i inventory/hosts.yml playbooks/site.yml
+ansible-playbook -i inventory/hosts.yaml playbooks/site.yaml
 
 # 특정 역할만 실행 (태그 사용)
-ansible-playbook -i inventory/hosts.yml playbooks/site.yml --tags "prometheus"
-ansible-playbook -i inventory/hosts.yml playbooks/site.yml --tags "gpu_exporters"
+ansible-playbook -i inventory/hosts.yaml playbooks/site.yaml --tags "prometheus"
+ansible-playbook -i inventory/hosts.yaml playbooks/site.yaml --tags "gpu_exporters"
 
 # Dry-run (실제 실행 없이 확인)
-ansible-playbook -i inventory/hosts.yml playbooks/site.yml --check
+ansible-playbook -i inventory/hosts.yaml playbooks/site.yaml --check
 
 # 상세 출력
-ansible-playbook -i inventory/hosts.yml playbooks/site.yml -v
+ansible-playbook -i inventory/hosts.yaml playbooks/site.yaml -v
 ```
 
 ### 5단계: 확인
@@ -229,7 +229,7 @@ ansible-playbook -i inventory/hosts.yml playbooks/site.yml -v
 
 ## 주요 파일 설명
 
-### inventory/hosts.yml
+### inventory/hosts.yaml
 
 관리할 서버 목록입니다. 그룹으로 분류하여 역할별 설치를 지정합니다.
 
@@ -247,16 +247,16 @@ all:
           ansible_host: 192.168.1.101
 ```
 
-### group_vars/all.yml
+### group_vars/all.yaml
 
 모든 서버에 적용되는 변수입니다. 버전, 포트, 알람 설정 등을 정의합니다.
 
-### roles/*/tasks/main.yml
+### roles/*/tasks/main.yaml
 
 각 컴포넌트의 설치 작업을 정의합니다. 예시:
 
 ```yaml
-# roles/prometheus/tasks/main.yml
+# roles/prometheus/tasks/main.yaml
 - name: Download Prometheus
   get_url:
     url: "https://github.com/prometheus/prometheus/releases/..."
@@ -282,36 +282,36 @@ all:
 ### 노드 추가
 
 ```bash
-# 1. inventory/hosts.yml에 노드 추가
+# 1. inventory/hosts.yaml에 노드 추가
 # 2. 해당 노드에만 exporter 설치
-ansible-playbook -i inventory/hosts.yml playbooks/site.yml \
+ansible-playbook -i inventory/hosts.yaml playbooks/site.yaml \
   --tags "exporters" \
   --limit "gpu-node-new"
 
 # 3. Prometheus 설정 갱신 (targets 추가)
-ansible-playbook -i inventory/hosts.yml playbooks/site.yml \
+ansible-playbook -i inventory/hosts.yaml playbooks/site.yaml \
   --tags "prometheus_config"
 ```
 
 ### 노드 제거
 
 ```bash
-# 1. inventory/hosts.yml에서 노드 제거
+# 1. inventory/hosts.yaml에서 노드 제거
 # 2. Prometheus 설정 갱신
-ansible-playbook -i inventory/hosts.yml playbooks/site.yml \
+ansible-playbook -i inventory/hosts.yaml playbooks/site.yaml \
   --tags "prometheus_config"
 
 # 3. (선택) 해당 노드에서 exporter 제거
-ansible -i inventory/hosts.yml gpu-node-old -m shell \
+ansible -i inventory/hosts.yaml gpu-node-old -m shell \
   -a "systemctl stop node_exporter dcgm-exporter && rm -rf /opt/exporters"
 ```
 
 ### 알람 룰 수정
 
 ```bash
-# 1. group_vars/all.yml 또는 files/alert-rules.yml 수정
+# 1. group_vars/all.yaml 또는 files/alert-rules.yaml 수정
 # 2. 알람 룰만 업데이트
-ansible-playbook -i inventory/hosts.yml playbooks/site.yml \
+ansible-playbook -i inventory/hosts.yaml playbooks/site.yaml \
   --tags "alert_rules"
 ```
 
@@ -319,11 +319,11 @@ ansible-playbook -i inventory/hosts.yml playbooks/site.yml \
 
 ```bash
 # Prometheus 재시작
-ansible -i inventory/hosts.yml control -m systemd \
+ansible -i inventory/hosts.yaml control -m systemd \
   -a "name=prometheus state=restarted"
 
 # 모든 GPU 노드의 DCGM exporter 재시작
-ansible -i inventory/hosts.yml gpu_nodes -m systemd \
+ansible -i inventory/hosts.yaml gpu_nodes -m systemd \
   -a "name=dcgm-exporter state=restarted"
 ```
 
@@ -346,7 +346,7 @@ chmod 644 ~/.ssh/id_ed25519.pub
 
 ```bash
 # 대상 서버에 Python 설치 (raw 모듈 사용)
-ansible -i inventory/hosts.yml gpu_nodes -m raw \
+ansible -i inventory/hosts.yaml gpu_nodes -m raw \
   -a "apt install -y python3 || yum install -y python3"
 ```
 
@@ -385,20 +385,20 @@ sudo iptables -A INPUT -p tcp --dport 9400 -j ACCEPT
 
 ```bash
 # 인벤토리의 모든 호스트 나열
-ansible-inventory -i inventory/hosts.yml --list
+ansible-inventory -i inventory/hosts.yaml --list
 
 # 특정 그룹의 호스트만 나열
-ansible-inventory -i inventory/hosts.yml --graph gpu_nodes
+ansible-inventory -i inventory/hosts.yaml --graph gpu_nodes
 
 # Ad-hoc 명령 실행 (모든 GPU 노드에서)
-ansible -i inventory/hosts.yml gpu_nodes -m shell -a "nvidia-smi"
+ansible -i inventory/hosts.yaml gpu_nodes -m shell -a "nvidia-smi"
 
 # 파일 복사
-ansible -i inventory/hosts.yml gpu_nodes -m copy \
+ansible -i inventory/hosts.yaml gpu_nodes -m copy \
   -a "src=./files/config.yaml dest=/etc/app/config.yaml"
 
 # 서비스 상태 확인
-ansible -i inventory/hosts.yml gpu_nodes -m systemd \
+ansible -i inventory/hosts.yaml gpu_nodes -m systemd \
   -a "name=dcgm-exporter" | grep ActiveState
 ```
 
