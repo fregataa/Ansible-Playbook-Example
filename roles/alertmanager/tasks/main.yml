@@ -1,0 +1,111 @@
+---
+# Alertmanager 설치 및 설정
+
+- name: Create Alertmanager directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: monitoring
+    group: monitoring
+  loop:
+    - "{{ install_dir }}/alertmanager"
+    - "{{ alertmanager_data_dir }}"
+    - "{{ alertmanager_config_dir }}"
+    - "{{ alertmanager_config_dir }}/templates"
+  tags: [alertmanager]
+
+- name: Check if Alertmanager is already installed
+  stat:
+    path: "{{ install_dir }}/alertmanager/alertmanager"
+  register: alertmanager_binary
+  tags: [alertmanager]
+
+- name: Download Alertmanager
+  get_url:
+    url: "{{ alertmanager_download_url }}"
+    dest: /tmp/alertmanager.tar.gz
+    mode: '0644'
+  when: not alertmanager_binary.stat.exists
+  tags: [alertmanager]
+
+- name: Extract Alertmanager
+  unarchive:
+    src: /tmp/alertmanager.tar.gz
+    dest: /tmp
+    remote_src: yes
+  when: not alertmanager_binary.stat.exists
+  tags: [alertmanager]
+
+- name: Install Alertmanager binaries
+  copy:
+    src: "/tmp/alertmanager-{{ alertmanager_version }}.linux-amd64/{{ item }}"
+    dest: "{{ install_dir }}/alertmanager/{{ item }}"
+    mode: '0755'
+    owner: monitoring
+    group: monitoring
+    remote_src: yes
+  loop:
+    - alertmanager
+    - amtool
+  when: not alertmanager_binary.stat.exists
+  notify: Restart alertmanager
+  tags: [alertmanager]
+
+- name: Create Alertmanager configuration
+  template:
+    src: alertmanager.yml.j2
+    dest: "{{ alertmanager_config_dir }}/alertmanager.yml"
+    mode: '0640'
+    owner: monitoring
+    group: monitoring
+  notify: Reload alertmanager
+  tags: [alertmanager, alertmanager_config]
+
+- name: Create notification templates
+  template:
+    src: notification.tmpl.j2
+    dest: "{{ alertmanager_config_dir }}/templates/notification.tmpl"
+    mode: '0644'
+    owner: monitoring
+    group: monitoring
+  notify: Reload alertmanager
+  tags: [alertmanager, alertmanager_config]
+
+- name: Create Alertmanager systemd service
+  template:
+    src: alertmanager.service.j2
+    dest: /etc/systemd/system/alertmanager.service
+    mode: '0644'
+  notify:
+    - Reload systemd
+    - Restart alertmanager
+  tags: [alertmanager]
+
+- name: Enable and start Alertmanager
+  systemd:
+    name: alertmanager
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  tags: [alertmanager]
+
+- name: Clean up temporary files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/alertmanager.tar.gz
+    - "/tmp/alertmanager-{{ alertmanager_version }}.linux-amd64"
+  tags: [alertmanager, cleanup]
+
+- name: Wait for Alertmanager to be ready
+  uri:
+    url: "http://localhost:{{ alertmanager_port }}/-/ready"
+    method: GET
+    status_code: 200
+  register: alertmanager_health
+  until: alertmanager_health.status == 200
+  retries: 30
+  delay: 2
+  tags: [alertmanager]

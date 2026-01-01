@@ -1,0 +1,158 @@
+---
+# Grafana 설치 및 설정
+
+- name: Create Grafana directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: monitoring
+    group: monitoring
+  loop:
+    - "{{ grafana_data_dir }}"
+    - "{{ grafana_config_dir }}"
+    - "{{ grafana_provisioning_dir }}"
+    - "{{ grafana_provisioning_dir }}/datasources"
+    - "{{ grafana_provisioning_dir }}/dashboards"
+    - "{{ grafana_provisioning_dir }}/notifiers"
+    - "{{ grafana_plugins_dir }}"
+  tags: [grafana]
+
+# 패키지 설치 (Ubuntu/Debian)
+- name: Add Grafana GPG key (Debian/Ubuntu)
+  apt_key:
+    url: https://apt.grafana.com/gpg.key
+    state: present
+  when:
+    - grafana_install_method == "package"
+    - ansible_os_family == "Debian"
+  tags: [grafana]
+
+- name: Add Grafana repository (Debian/Ubuntu)
+  apt_repository:
+    repo: "deb https://apt.grafana.com stable main"
+    state: present
+    filename: grafana
+  when:
+    - grafana_install_method == "package"
+    - ansible_os_family == "Debian"
+  tags: [grafana]
+
+- name: Install Grafana (Debian/Ubuntu)
+  apt:
+    name: grafana
+    state: present
+    update_cache: yes
+  when:
+    - grafana_install_method == "package"
+    - ansible_os_family == "Debian"
+  notify: Restart grafana
+  tags: [grafana]
+
+# 패키지 설치 (RHEL/CentOS)
+- name: Add Grafana repository (RHEL/CentOS)
+  yum_repository:
+    name: grafana
+    description: Grafana Repository
+    baseurl: https://rpm.grafana.com
+    gpgcheck: yes
+    gpgkey: https://rpm.grafana.com/gpg.key
+    enabled: yes
+  when:
+    - grafana_install_method == "package"
+    - ansible_os_family == "RedHat"
+  tags: [grafana]
+
+- name: Install Grafana (RHEL/CentOS)
+  yum:
+    name: grafana
+    state: present
+  when:
+    - grafana_install_method == "package"
+    - ansible_os_family == "RedHat"
+  notify: Restart grafana
+  tags: [grafana]
+
+# Grafana 설정 파일
+- name: Configure Grafana
+  template:
+    src: grafana.ini.j2
+    dest: /etc/grafana/grafana.ini
+    mode: '0640'
+    owner: root
+    group: grafana
+  notify: Restart grafana
+  tags: [grafana, grafana_config]
+
+# Prometheus 데이터소스 프로비저닝
+- name: Provision Prometheus datasource
+  template:
+    src: datasource-prometheus.yml.j2
+    dest: "{{ grafana_provisioning_dir }}/datasources/prometheus.yml"
+    mode: '0644'
+    owner: monitoring
+    group: monitoring
+  notify: Restart grafana
+  tags: [grafana, grafana_config]
+
+# 대시보드 프로비저닝 설정
+- name: Provision dashboard configuration
+  template:
+    src: dashboard-provider.yml.j2
+    dest: "{{ grafana_provisioning_dir }}/dashboards/default.yml"
+    mode: '0644'
+    owner: monitoring
+    group: monitoring
+  notify: Restart grafana
+  tags: [grafana, grafana_config]
+
+# GPU 대시보드 복사
+- name: Copy GPU overview dashboard
+  template:
+    src: gpu-overview-dashboard.json.j2
+    dest: "{{ grafana_provisioning_dir }}/dashboards/gpu-overview.json"
+    mode: '0644'
+    owner: monitoring
+    group: monitoring
+  tags: [grafana, dashboards]
+
+# 노드 상세 대시보드 복사
+- name: Copy node detail dashboard
+  template:
+    src: node-detail-dashboard.json.j2
+    dest: "{{ grafana_provisioning_dir }}/dashboards/node-detail.json"
+    mode: '0644'
+    owner: monitoring
+    group: monitoring
+  tags: [grafana, dashboards]
+
+# 플러그인 설치
+- name: Install Grafana plugins
+  command: grafana-cli plugins install {{ item }}
+  args:
+    creates: "{{ grafana_plugins_dir }}/{{ item }}"
+  loop: "{{ grafana_plugins }}"
+  when: grafana_plugins | length > 0
+  notify: Restart grafana
+  tags: [grafana, plugins]
+
+# 서비스 시작
+- name: Enable and start Grafana
+  systemd:
+    name: grafana-server
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  tags: [grafana]
+
+# 헬스 체크
+- name: Wait for Grafana to be ready
+  uri:
+    url: "http://localhost:{{ grafana_port }}/api/health"
+    method: GET
+    status_code: 200
+  register: grafana_health
+  until: grafana_health.status == 200
+  retries: 30
+  delay: 2
+  tags: [grafana]

@@ -1,0 +1,48 @@
+---
+# Control Node 전용 Playbook
+# Prometheus, Alertmanager, Grafana를 Control Node에 설치합니다.
+#
+# 사용법:
+#   ansible-playbook -i inventory/hosts.yml playbooks/install-control.yml
+
+- name: Apply common configuration to control node
+  hosts: control
+  become: yes
+  gather_facts: yes
+  roles:
+    - role: common
+      tags: [common]
+
+- name: Install Node Exporter on control node
+  hosts: control
+  become: yes
+  roles:
+    - role: node_exporter
+      tags: [node_exporter]
+
+- name: Install monitoring stack on control node
+  hosts: control
+  become: yes
+  roles:
+    - role: prometheus
+      tags: [prometheus]
+    - role: alertmanager
+      tags: [alertmanager]
+    - role: grafana
+      tags: [grafana]
+
+- name: Display control node installation summary
+  hosts: control
+  become: no
+  gather_facts: no
+  tasks:
+    - name: Show access URLs
+      debug:
+        msg: |
+          Control Node Setup Complete!
+
+          Grafana:      http://{{ ansible_host }}:{{ grafana_port }}
+          Prometheus:   http://{{ ansible_host }}:{{ prometheus_port }}
+          Alertmanager: http://{{ ansible_host }}:{{ alertmanager_port }}
+
+          Next: Run install-gpu-nodes.yml to set up GPU node exporters.

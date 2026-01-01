@@ -1,0 +1,31 @@
+[Unit]
+Description=Prometheus Alertmanager
+Documentation=https://prometheus.io/docs/alerting/alertmanager/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=monitoring
+Group=monitoring
+ExecStart={{ install_dir }}/alertmanager/alertmanager \
+    --config.file={{ alertmanager_config_dir }}/alertmanager.yml \
+    --storage.path={{ alertmanager_data_dir }} \
+    --web.listen-address=:{{ alertmanager_port }} \
+    --log.level={{ log_level }}
+
+ExecReload=/bin/kill -HUP $MAINPID
+TimeoutStopSec=20s
+SendSIGKILL=no
+
+Restart={{ systemd_restart_policy }}
+RestartSec={{ systemd_restart_sec }}
+
+# 보안 설정
+NoNewPrivileges=yes
+ProtectSystem=full
+ProtectHome=yes
+ReadWritePaths={{ alertmanager_data_dir }}
+
+[Install]
+WantedBy=multi-user.target

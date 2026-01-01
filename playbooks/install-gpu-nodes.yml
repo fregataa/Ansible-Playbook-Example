@@ -1,0 +1,63 @@
+---
+# GPU Node 전용 Playbook
+# Node Exporter와 DCGM Exporter를 GPU 노드에 설치합니다.
+#
+# 사용법:
+#   전체:        ansible-playbook -i inventory/hosts.yml playbooks/install-gpu-nodes.yml
+#   특정 노드만: ansible-playbook -i inventory/hosts.yml playbooks/install-gpu-nodes.yml --limit gpu-node-01
+
+- name: Apply common configuration to GPU nodes
+  hosts: gpu_nodes
+  become: yes
+  gather_facts: yes
+  roles:
+    - role: common
+      tags: [common]
+
+- name: Install exporters on GPU nodes
+  hosts: gpu_nodes
+  become: yes
+  roles:
+    - role: node_exporter
+      tags: [node_exporter]
+    - role: dcgm_exporter
+      tags: [dcgm_exporter]
+
+- name: Update Prometheus configuration to include new nodes
+  hosts: control
+  become: yes
+  tasks:
+    - name: Regenerate Prometheus config with new targets
+      template:
+        src: ../roles/prometheus/templates/prometheus.yml.j2
+        dest: "{{ prometheus_config_dir }}/prometheus.yml"
+        mode: '0644'
+        owner: monitoring
+        group: monitoring
+      notify: Reload prometheus
+      tags: [prometheus_config]
+
+  handlers:
+    - name: Reload prometheus
+      uri:
+        url: "http://localhost:{{ prometheus_port }}/-/reload"
+        method: POST
+        status_code: 200
+      ignore_errors: yes
+
+- name: Display GPU node installation summary
+  hosts: gpu_nodes
+  become: no
+  gather_facts: no
+  tasks:
+    - name: Show node status
+      debug:
+        msg: |
+          GPU Node {{ inventory_hostname }} setup complete!
+
+          Exporters:
+            Node Exporter: http://{{ ansible_host }}:{{ node_exporter_port }}/metrics
+            DCGM Exporter: http://{{ ansible_host }}:{{ dcgm_exporter_port }}/metrics
+
+          Verify in Prometheus:
+            http://control-node:{{ prometheus_port }}/targets

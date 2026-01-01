@@ -1,0 +1,17 @@
+---
+# Ansible Galaxy Requirements
+# 사용법: ansible-galaxy install -r requirements.yml
+
+collections:
+  # 커뮤니티 일반 모듈
+  - name: community.general
+    version: ">=7.0.0"
+
+  # Docker 모듈 (DCGM Docker 방식 사용 시)
+  - name: community.docker
+    version: ">=3.0.0"
+
+# 추가 role이 필요한 경우 여기에 추가
+# roles:
+#   - name: geerlingguy.docker
+#     version: "6.1.0"

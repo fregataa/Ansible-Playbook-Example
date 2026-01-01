@@ -1,0 +1,37 @@
+[Unit]
+Description=Prometheus Monitoring System
+Documentation=https://prometheus.io/docs/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=monitoring
+Group=monitoring
+ExecStart={{ install_dir }}/prometheus/prometheus \
+    --config.file={{ prometheus_config_dir }}/prometheus.yml \
+    --storage.tsdb.path={{ prometheus_data_dir }} \
+    --storage.tsdb.retention.time={{ prometheus_retention_time }} \
+    --storage.tsdb.retention.size={{ prometheus_retention_size }} \
+    --web.listen-address=:{{ prometheus_port }} \
+    --web.console.templates={{ install_dir }}/prometheus/consoles \
+    --web.console.libraries={{ install_dir }}/prometheus/console_libraries \
+    --web.enable-lifecycle \
+    --web.enable-admin-api \
+    --log.level={{ log_level }}
+
+ExecReload=/bin/kill -HUP $MAINPID
+TimeoutStopSec=20s
+SendSIGKILL=no
+
+Restart={{ systemd_restart_policy }}
+RestartSec={{ systemd_restart_sec }}
+
+# 보안 설정
+NoNewPrivileges=yes
+ProtectSystem=full
+ProtectHome=yes
+ReadWritePaths={{ prometheus_data_dir }}
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,9 @@
+---
+# Common role defaults
+# 이 값들은 group_vars/all.yml에서 오버라이드됩니다.
+
+install_dir: /opt/monitoring
+config_dir: /etc/monitoring
+data_dir: /var/lib/monitoring
+configure_firewall: true
+firewall_ports: []

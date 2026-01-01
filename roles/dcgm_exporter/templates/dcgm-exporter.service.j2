@@ -1,0 +1,23 @@
+[Unit]
+Description=NVIDIA DCGM Exporter
+Documentation=https://github.com/NVIDIA/dcgm-exporter
+After=network-online.target nvidia-dcgm.service
+Wants=network-online.target
+Requires=nvidia-dcgm.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart={{ install_dir }}/dcgm-exporter/dcgm-exporter \
+    --address=:{{ dcgm_exporter_port }} \
+    --collectors={{ config_dir }}/dcgm-exporter-metrics.csv \
+    --collect-interval={{ dcgm_exporter_collect_interval }}
+
+Restart={{ systemd_restart_policy }}
+RestartSec={{ systemd_restart_sec }}
+
+# DCGM exporter는 GPU 접근을 위해 root 권한 필요
+
+[Install]
+WantedBy=multi-user.target

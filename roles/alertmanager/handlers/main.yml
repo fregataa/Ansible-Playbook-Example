@@ -1,0 +1,19 @@
+---
+# Alertmanager handlers
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: Restart alertmanager
+  systemd:
+    name: alertmanager
+    state: restarted
+    enabled: yes
+
+- name: Reload alertmanager
+  uri:
+    url: "http://localhost:{{ alertmanager_port }}/-/reload"
+    method: POST
+    status_code: 200
+  ignore_errors: yes

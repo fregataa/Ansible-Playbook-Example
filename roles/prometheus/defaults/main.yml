@@ -1,0 +1,19 @@
+---
+# Prometheus role defaults
+
+prometheus_version: "2.47.2"
+prometheus_port: 9090
+prometheus_retention_time: "15d"
+prometheus_retention_size: "50GB"
+prometheus_scrape_interval: "15s"
+prometheus_evaluation_interval: "15s"
+
+# 다운로드 URL
+prometheus_download_url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+
+# 데이터 경로
+prometheus_data_dir: "{{ data_dir }}/prometheus"
+prometheus_config_dir: "{{ config_dir }}/prometheus"
+
+# 로그 레벨
+log_level: info

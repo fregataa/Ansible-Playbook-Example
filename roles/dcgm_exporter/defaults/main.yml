@@ -1,0 +1,27 @@
+---
+# DCGM Exporter role defaults
+
+dcgm_exporter_version: "3.3.0-3.2.0"
+dcgm_exporter_port: 9400
+dcgm_exporter_collect_interval: 10000  # 밀리초
+
+# DCGM Exporter 다운로드 URL (GitHub releases)
+dcgm_exporter_download_url: "https://github.com/NVIDIA/dcgm-exporter/releases/download/v{{ dcgm_exporter_version }}/dcgm-exporter-linux-amd64"
+
+# 대안: Docker 이미지 사용
+dcgm_exporter_use_docker: false
+dcgm_exporter_docker_image: "nvcr.io/nvidia/k8s/dcgm-exporter:{{ dcgm_exporter_version }}-ubuntu22.04"
+
+# 수집할 메트릭 (기본값)
+dcgm_exporter_metrics:
+  - DCGM_FI_DEV_GPU_TEMP
+  - DCGM_FI_DEV_MEMORY_TEMP
+  - DCGM_FI_DEV_POWER_USAGE
+  - DCGM_FI_DEV_GPU_UTIL
+  - DCGM_FI_DEV_MEM_COPY_UTIL
+  - DCGM_FI_DEV_FB_FREE
+  - DCGM_FI_DEV_FB_USED
+  - DCGM_FI_DEV_ECC_SBE_VOL_TOTAL
+  - DCGM_FI_DEV_ECC_DBE_VOL_TOTAL
+  - DCGM_FI_DEV_XID_ERRORS
+  - DCGM_FI_DEV_NVLINK_BANDWIDTH_TOTAL

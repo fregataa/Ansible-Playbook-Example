@@ -1,0 +1,119 @@
+---
+# 설정 업데이트 Playbook
+# 인벤토리나 변수 변경 후 설정만 업데이트할 때 사용합니다.
+#
+# 사용법:
+#   전체 설정:    ansible-playbook -i inventory/hosts.yml playbooks/update-config.yml
+#   Prometheus만: ansible-playbook -i inventory/hosts.yml playbooks/update-config.yml --tags prometheus
+#   알람 룰만:    ansible-playbook -i inventory/hosts.yml playbooks/update-config.yml --tags alert_rules
+#   알림 설정만:  ansible-playbook -i inventory/hosts.yml playbooks/update-config.yml --tags alertmanager
+
+- name: Update Prometheus configuration
+  hosts: control
+  become: yes
+  gather_facts: yes
+  tasks:
+    - name: Update Prometheus config
+      template:
+        src: ../roles/prometheus/templates/prometheus.yml.j2
+        dest: "{{ prometheus_config_dir }}/prometheus.yml"
+        mode: '0644'
+        owner: monitoring
+        group: monitoring
+        validate: "{{ install_dir }}/prometheus/promtool check config %s"
+      notify: Reload prometheus
+      tags: [prometheus, prometheus_config]
+
+    - name: Update GPU alert rules
+      template:
+        src: ../roles/prometheus/templates/gpu-alerts.yml.j2
+        dest: "{{ prometheus_config_dir }}/rules/gpu-alerts.yml"
+        mode: '0644'
+        owner: monitoring
+        group: monitoring
+      notify: Reload prometheus
+      tags: [prometheus, alert_rules]
+
+    - name: Update system alert rules
+      template:
+        src: ../roles/prometheus/templates/system-alerts.yml.j2
+        dest: "{{ prometheus_config_dir }}/rules/system-alerts.yml"
+        mode: '0644'
+        owner: monitoring
+        group: monitoring
+      notify: Reload prometheus
+      tags: [prometheus, alert_rules]
+
+    - name: Update Alertmanager config
+      template:
+        src: ../roles/alertmanager/templates/alertmanager.yml.j2
+        dest: "{{ alertmanager_config_dir }}/alertmanager.yml"
+        mode: '0640'
+        owner: monitoring
+        group: monitoring
+      notify: Reload alertmanager
+      tags: [alertmanager, alertmanager_config]
+
+    - name: Update notification templates
+      template:
+        src: ../roles/alertmanager/templates/notification.tmpl.j2
+        dest: "{{ alertmanager_config_dir }}/templates/notification.tmpl"
+        mode: '0644'
+        owner: monitoring
+        group: monitoring
+      notify: Reload alertmanager
+      tags: [alertmanager, alertmanager_config]
+
+  handlers:
+    - name: Reload prometheus
+      uri:
+        url: "http://localhost:{{ prometheus_port }}/-/reload"
+        method: POST
+        status_code: 200
+
+    - name: Reload alertmanager
+      uri:
+        url: "http://localhost:{{ alertmanager_port }}/-/reload"
+        method: POST
+        status_code: 200
+
+- name: Update Grafana dashboards
+  hosts: control
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Update GPU overview dashboard
+      template:
+        src: ../roles/grafana/templates/gpu-overview-dashboard.json.j2
+        dest: "{{ grafana_provisioning_dir }}/dashboards/gpu-overview.json"
+        mode: '0644'
+        owner: monitoring
+        group: monitoring
+      tags: [grafana, dashboards]
+
+    - name: Update node detail dashboard
+      template:
+        src: ../roles/grafana/templates/node-detail-dashboard.json.j2
+        dest: "{{ grafana_provisioning_dir }}/dashboards/node-detail.json"
+        mode: '0644'
+        owner: monitoring
+        group: monitoring
+      tags: [grafana, dashboards]
+
+- name: Show update summary
+  hosts: control
+  become: no
+  gather_facts: no
+  tasks:
+    - name: Configuration update complete
+      debug:
+        msg: |
+          Configuration updated successfully!
+
+          Prometheus: http://{{ ansible_host }}:{{ prometheus_port }}
+          - Check /targets for scrape targets
+          - Check /rules for alert rules
+
+          Alertmanager: http://{{ ansible_host }}:{{ alertmanager_port }}
+          - Check /#/status for configuration status
+      tags: [always]

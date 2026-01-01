@@ -1,0 +1,70 @@
+---
+# Common role: 모든 노드에 적용되는 공통 설정
+
+- name: Set timezone to UTC
+  timezone:
+    name: UTC
+  tags: [common, timezone]
+
+- name: Install common packages
+  package:
+    name:
+      - curl
+      - wget
+      - tar
+      - gzip
+      - ca-certificates
+    state: present
+  tags: [common, packages]
+
+- name: Create monitoring directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ install_dir }}"
+    - "{{ config_dir }}"
+    - "{{ data_dir }}"
+  tags: [common, directories]
+
+- name: Create monitoring user
+  user:
+    name: monitoring
+    system: yes
+    shell: /sbin/nologin
+    home: "{{ data_dir }}"
+    create_home: no
+  tags: [common, user]
+
+- name: Configure firewall (firewalld)
+  firewalld:
+    port: "{{ item }}"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  loop: "{{ firewall_ports }}"
+  when:
+    - configure_firewall | bool
+    - ansible_facts.services['firewalld.service'] is defined
+    - ansible_facts.services['firewalld.service'].state == 'running'
+  ignore_errors: yes
+  tags: [common, firewall]
+
+- name: Configure firewall (iptables fallback)
+  iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port: "{{ item.split('/')[0] }}"
+    jump: ACCEPT
+  loop: "{{ firewall_ports }}"
+  when:
+    - configure_firewall | bool
+    - ansible_facts.services['firewalld.service'] is not defined or
+      ansible_facts.services['firewalld.service'].state != 'running'
+  ignore_errors: yes
+  tags: [common, firewall]
+
+- name: Gather service facts
+  service_facts:
+  tags: [common]

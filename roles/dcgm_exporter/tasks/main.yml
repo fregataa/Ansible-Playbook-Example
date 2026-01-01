@@ -1,0 +1,149 @@
+---
+# DCGM Exporter 설치 및 설정
+# 전제조건: NVIDIA 드라이버 및 DCGM이 설치되어 있어야 함
+
+- name: Check if NVIDIA driver is installed
+  command: nvidia-smi --query-gpu=driver_version --format=csv,noheader
+  register: nvidia_driver_check
+  changed_when: false
+  failed_when: false
+  tags: [dcgm_exporter, gpu_exporters]
+
+- name: Fail if NVIDIA driver is not installed
+  fail:
+    msg: "NVIDIA driver is not installed. Please install NVIDIA driver first."
+  when: nvidia_driver_check.rc != 0
+  tags: [dcgm_exporter, gpu_exporters]
+
+- name: Display NVIDIA driver version
+  debug:
+    msg: "NVIDIA Driver Version: {{ nvidia_driver_check.stdout }}"
+  when: nvidia_driver_check.rc == 0
+  tags: [dcgm_exporter, gpu_exporters]
+
+# DCGM 설치 (Ubuntu/Debian)
+- name: Add NVIDIA DCGM repository key (Debian/Ubuntu)
+  apt_key:
+    url: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/3bf863cc.pub
+    state: present
+  when: ansible_os_family == "Debian"
+  tags: [dcgm_exporter, gpu_exporters]
+
+- name: Add NVIDIA DCGM repository (Debian/Ubuntu)
+  apt_repository:
+    repo: "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/ /"
+    state: present
+    filename: cuda
+  when: ansible_os_family == "Debian"
+  tags: [dcgm_exporter, gpu_exporters]
+
+- name: Install DCGM (Debian/Ubuntu)
+  apt:
+    name: datacenter-gpu-manager
+    state: present
+    update_cache: yes
+  when: ansible_os_family == "Debian"
+  tags: [dcgm_exporter, gpu_exporters]
+
+# DCGM 설치 (RHEL/CentOS)
+- name: Add NVIDIA DCGM repository (RHEL/CentOS)
+  yum_repository:
+    name: cuda
+    description: NVIDIA CUDA Repository
+    baseurl: https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/
+    gpgcheck: yes
+    gpgkey: https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/D42D0685.pub
+    enabled: yes
+  when: ansible_os_family == "RedHat"
+  tags: [dcgm_exporter, gpu_exporters]
+
+- name: Install DCGM (RHEL/CentOS)
+  yum:
+    name: datacenter-gpu-manager
+    state: present
+  when: ansible_os_family == "RedHat"
+  tags: [dcgm_exporter, gpu_exporters]
+
+- name: Enable and start DCGM service
+  systemd:
+    name: nvidia-dcgm
+    state: started
+    enabled: yes
+  tags: [dcgm_exporter, gpu_exporters]
+
+# DCGM Exporter 설치 (바이너리 방식)
+- name: Create dcgm_exporter directory
+  file:
+    path: "{{ install_dir }}/dcgm-exporter"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+  when: not dcgm_exporter_use_docker
+  tags: [dcgm_exporter, gpu_exporters]
+
+- name: Check if dcgm-exporter binary exists
+  stat:
+    path: "{{ install_dir }}/dcgm-exporter/dcgm-exporter"
+  register: dcgm_exporter_binary
+  when: not dcgm_exporter_use_docker
+  tags: [dcgm_exporter, gpu_exporters]
+
+- name: Download dcgm-exporter binary
+  get_url:
+    url: "{{ dcgm_exporter_download_url }}"
+    dest: "{{ install_dir }}/dcgm-exporter/dcgm-exporter"
+    mode: '0755'
+  when:
+    - not dcgm_exporter_use_docker
+    - not dcgm_exporter_binary.stat.exists | default(true)
+  notify: Restart dcgm-exporter
+  tags: [dcgm_exporter, gpu_exporters]
+
+# 메트릭 설정 파일 생성
+- name: Create dcgm-exporter metrics config
+  template:
+    src: dcgm-exporter-metrics.csv.j2
+    dest: "{{ config_dir }}/dcgm-exporter-metrics.csv"
+    mode: '0644'
+  notify: Restart dcgm-exporter
+  tags: [dcgm_exporter, gpu_exporters]
+
+# systemd 서비스 생성
+- name: Create dcgm-exporter systemd service
+  template:
+    src: dcgm-exporter.service.j2
+    dest: /etc/systemd/system/dcgm-exporter.service
+    mode: '0644'
+  when: not dcgm_exporter_use_docker
+  notify:
+    - Reload systemd
+    - Restart dcgm-exporter
+  tags: [dcgm_exporter, gpu_exporters]
+
+- name: Enable and start dcgm-exporter
+  systemd:
+    name: dcgm-exporter
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  when: not dcgm_exporter_use_docker
+  tags: [dcgm_exporter, gpu_exporters]
+
+# Docker 방식 (대안)
+- name: Run dcgm-exporter container
+  docker_container:
+    name: dcgm-exporter
+    image: "{{ dcgm_exporter_docker_image }}"
+    state: started
+    restart_policy: always
+    ports:
+      - "{{ dcgm_exporter_port }}:9400"
+    volumes:
+      - /var/run/dcgm:/var/run/dcgm:ro
+    runtime: nvidia
+    env:
+      DCGM_EXPORTER_LISTEN: ":9400"
+      DCGM_EXPORTER_KUBERNETES: "false"
+  when: dcgm_exporter_use_docker
+  tags: [dcgm_exporter, gpu_exporters, docker]

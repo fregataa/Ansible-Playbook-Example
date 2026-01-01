@@ -1,0 +1,28 @@
+---
+# Alertmanager role defaults
+
+alertmanager_version: "0.26.0"
+alertmanager_port: 9093
+
+# 다운로드 URL
+alertmanager_download_url: "https://github.com/prometheus/alertmanager/releases/download/v{{ alertmanager_version }}/alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz"
+
+# 데이터 경로
+alertmanager_data_dir: "{{ data_dir }}/alertmanager"
+alertmanager_config_dir: "{{ config_dir }}/alertmanager"
+
+# 기본 알림 설정 (실제 값은 group_vars에서 설정)
+# alertmanager_slack_webhook: ""
+# alertmanager_slack_channel: "#alerts"
+# alertmanager_smtp_host: ""
+# alertmanager_smtp_port: 587
+# alertmanager_smtp_from: ""
+# alertmanager_smtp_auth_username: ""
+# alertmanager_smtp_auth_password: ""
+# alertmanager_email_to: ""
+# alertmanager_webhook_url: ""
+
+# 알림 그룹 설정
+alertmanager_group_wait: "30s"
+alertmanager_group_interval: "5m"
+alertmanager_repeat_interval: "4h"

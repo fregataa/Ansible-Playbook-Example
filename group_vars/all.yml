@@ -1,0 +1,174 @@
+# ============================================================
+# GPU 클러스터 모니터링 전역 변수
+# ============================================================
+# 이 파일의 변수들은 모든 호스트에 적용됩니다.
+# 환경에 맞게 수정하세요.
+# ============================================================
+
+# ------------------------------------------------------------
+# 클러스터 정보
+# ------------------------------------------------------------
+cluster_name: "gpu-cluster-prod"
+
+# ------------------------------------------------------------
+# 컴포넌트 버전
+# ------------------------------------------------------------
+prometheus_version: "2.47.2"
+alertmanager_version: "0.26.0"
+grafana_version: "10.2.0"
+node_exporter_version: "1.7.0"
+dcgm_exporter_version: "3.3.0-3.2.0"
+
+# ------------------------------------------------------------
+# 설치 경로
+# ------------------------------------------------------------
+install_dir: /opt/monitoring
+config_dir: /etc/monitoring
+data_dir: /var/lib/monitoring
+
+# ------------------------------------------------------------
+# Prometheus 설정
+# ------------------------------------------------------------
+prometheus_port: 9090
+prometheus_retention_time: "15d"
+prometheus_retention_size: "50GB"
+prometheus_scrape_interval: "15s"
+prometheus_evaluation_interval: "15s"
+
+# ------------------------------------------------------------
+# Grafana 설정
+# ------------------------------------------------------------
+grafana_port: 3000
+grafana_admin_user: admin
+grafana_admin_password: "CHANGE_ME_SECURE_PASSWORD"  # 반드시 변경!
+
+# 익명 접근 허용 여부 (대시보드 공유 시 유용)
+grafana_allow_anonymous: false
+
+# ------------------------------------------------------------
+# Alertmanager 설정
+# ------------------------------------------------------------
+alertmanager_port: 9093
+
+# Slack 알림 설정 (사용하려면 주석 해제 후 값 입력)
+# alertmanager_slack_webhook: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+# alertmanager_slack_channel: "#gpu-alerts"
+
+# Email 알림 설정 (사용하려면 주석 해제 후 값 입력)
+# alertmanager_smtp_host: "smtp.company.com"
+# alertmanager_smtp_port: 587
+# alertmanager_smtp_from: "alertmanager@company.com"
+# alertmanager_smtp_auth_username: "alertmanager@company.com"
+# alertmanager_smtp_auth_password: "smtp_password"
+# alertmanager_email_to: "infra-team@company.com"
+
+# Webhook 알림 설정 (사용하려면 주석 해제 후 값 입력)
+# alertmanager_webhook_url: "https://your-webhook-endpoint.com/alerts"
+
+# ------------------------------------------------------------
+# Node Exporter 설정
+# ------------------------------------------------------------
+node_exporter_port: 9100
+node_exporter_collectors:
+  - cpu
+  - diskstats
+  - filesystem
+  - loadavg
+  - meminfo
+  - netdev
+  - stat
+  - time
+  - uname
+  - vmstat
+  - systemd
+  - textfile
+
+# 텍스트파일 콜렉터 디렉토리 (커스텀 메트릭용)
+node_exporter_textfile_dir: /var/lib/node_exporter/textfile_collector
+
+# ------------------------------------------------------------
+# DCGM Exporter 설정
+# ------------------------------------------------------------
+dcgm_exporter_port: 9400
+dcgm_exporter_collect_interval: 10000  # 밀리초
+
+# 수집할 GPU 메트릭 (전체 목록: https://github.com/NVIDIA/dcgm-exporter)
+dcgm_exporter_metrics:
+  # 온도
+  - DCGM_FI_DEV_GPU_TEMP
+  - DCGM_FI_DEV_MEMORY_TEMP
+  # 전력
+  - DCGM_FI_DEV_POWER_USAGE
+  - DCGM_FI_DEV_TOTAL_ENERGY_CONSUMPTION
+  # 사용률
+  - DCGM_FI_DEV_GPU_UTIL
+  - DCGM_FI_DEV_MEM_COPY_UTIL
+  - DCGM_FI_DEV_ENC_UTIL
+  - DCGM_FI_DEV_DEC_UTIL
+  # 메모리
+  - DCGM_FI_DEV_FB_FREE
+  - DCGM_FI_DEV_FB_USED
+  # ECC 에러
+  - DCGM_FI_DEV_ECC_SBE_VOL_TOTAL
+  - DCGM_FI_DEV_ECC_DBE_VOL_TOTAL
+  - DCGM_FI_DEV_RETIRED_SBE
+  - DCGM_FI_DEV_RETIRED_DBE
+  # PCIe
+  - DCGM_FI_DEV_PCIE_TX_THROUGHPUT
+  - DCGM_FI_DEV_PCIE_RX_THROUGHPUT
+  # NVLink
+  - DCGM_FI_DEV_NVLINK_BANDWIDTH_TOTAL
+  # XID 에러
+  - DCGM_FI_DEV_XID_ERRORS
+  # SM 클럭
+  - DCGM_FI_DEV_SM_CLOCK
+  - DCGM_FI_DEV_MEM_CLOCK
+  # Throttling
+  - DCGM_FI_DEV_POWER_VIOLATION
+  - DCGM_FI_DEV_THERMAL_VIOLATION
+
+# ------------------------------------------------------------
+# 알람 룰 설정
+# ------------------------------------------------------------
+# GPU 온도 임계치 (섭씨)
+alert_gpu_temp_warning: 75
+alert_gpu_temp_critical: 85
+
+# GPU 메모리 사용률 임계치 (%)
+alert_gpu_memory_warning: 90
+alert_gpu_memory_critical: 95
+
+# ECC 에러 임계치 (24시간 내 발생 횟수)
+alert_ecc_error_threshold: 100
+
+# 노드 다운 감지 시간
+alert_node_down_duration: "1m"
+
+# GPU 유휴 상태 감지 (사용률 %, 지속 시간)
+alert_gpu_idle_threshold: 5
+alert_gpu_idle_duration: "30m"
+
+# ------------------------------------------------------------
+# 방화벽 설정
+# ------------------------------------------------------------
+# 자동으로 방화벽 포트 열기 (firewalld 사용 시)
+configure_firewall: true
+
+# 열어야 할 포트 목록
+firewall_ports:
+  - "{{ prometheus_port }}/tcp"
+  - "{{ alertmanager_port }}/tcp"
+  - "{{ grafana_port }}/tcp"
+  - "{{ node_exporter_port }}/tcp"
+  - "{{ dcgm_exporter_port }}/tcp"
+
+# ------------------------------------------------------------
+# systemd 서비스 설정
+# ------------------------------------------------------------
+systemd_restart_policy: on-failure
+systemd_restart_sec: 5
+
+# ------------------------------------------------------------
+# 로깅 설정
+# ------------------------------------------------------------
+log_level: info  # debug, info, warn, error

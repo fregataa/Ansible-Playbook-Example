@@ -1,0 +1,35 @@
+# Ansible cache
+.ansible_cache/
+
+# Ansible retry files
+*.retry
+
+# Ansible logs
+ansible.log
+
+# Temporary files
+*.tmp
+*.bak
+*~
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Secrets (never commit!)
+secrets/
+vault_password
+*.vault
+group_vars/all.yml.bak
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/

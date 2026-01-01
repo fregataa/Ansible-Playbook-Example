@@ -1,0 +1,103 @@
+---
+# GPU Cluster Monitoring Stack - Main Playbook
+#
+# 사용법:
+#   전체 설치:     ansible-playbook -i inventory/hosts.yml playbooks/site.yml
+#   Control만:    ansible-playbook -i inventory/hosts.yml playbooks/site.yml --tags control
+#   GPU 노드만:   ansible-playbook -i inventory/hosts.yml playbooks/site.yml --tags gpu_nodes
+#   특정 컴포넌트: ansible-playbook -i inventory/hosts.yml playbooks/site.yml --tags prometheus
+#   Dry-run:      ansible-playbook -i inventory/hosts.yml playbooks/site.yml --check
+#
+# 태그 목록:
+#   - common: 공통 설정 (디렉토리, 방화벽 등)
+#   - exporters: 모든 exporter (node_exporter, dcgm_exporter)
+#   - node_exporter: Node Exporter만
+#   - dcgm_exporter: DCGM Exporter만 (GPU 노드)
+#   - gpu_exporters: GPU 관련 exporter (dcgm_exporter)
+#   - prometheus: Prometheus 서버
+#   - prometheus_config: Prometheus 설정만 업데이트
+#   - alert_rules: 알람 룰만 업데이트
+#   - alertmanager: Alertmanager
+#   - alertmanager_config: Alertmanager 설정만 업데이트
+#   - grafana: Grafana
+#   - grafana_config: Grafana 설정만 업데이트
+#   - dashboards: 대시보드만 업데이트
+#   - control: Control node 전체
+#   - gpu_nodes: GPU 노드 전체
+
+- name: Apply common configuration to all nodes
+  hosts: all_nodes
+  become: yes
+  gather_facts: yes
+  roles:
+    - role: common
+      tags: [common]
+
+- name: Install Node Exporter on all nodes
+  hosts: all_nodes
+  become: yes
+  roles:
+    - role: node_exporter
+      tags: [node_exporter, exporters]
+
+- name: Install DCGM Exporter on GPU nodes
+  hosts: gpu_nodes
+  become: yes
+  roles:
+    - role: dcgm_exporter
+      tags: [dcgm_exporter, gpu_exporters, exporters, gpu_nodes]
+
+- name: Install Prometheus on control node
+  hosts: control
+  become: yes
+  roles:
+    - role: prometheus
+      tags: [prometheus, control]
+
+- name: Install Alertmanager on control node
+  hosts: control
+  become: yes
+  roles:
+    - role: alertmanager
+      tags: [alertmanager, control]
+
+- name: Install Grafana on control node
+  hosts: control
+  become: yes
+  roles:
+    - role: grafana
+      tags: [grafana, control]
+
+- name: Display installation summary
+  hosts: control
+  become: no
+  gather_facts: no
+  tasks:
+    - name: Show access URLs
+      debug:
+        msg: |
+
+          ============================================================
+          GPU Cluster Monitoring Stack Installation Complete!
+          ============================================================
+
+          Access URLs:
+            Grafana:      http://{{ ansible_host }}:{{ grafana_port }}
+                          Username: {{ grafana_admin_user }}
+                          Password: (configured in group_vars/all.yml)
+
+            Prometheus:   http://{{ ansible_host }}:{{ prometheus_port }}
+
+            Alertmanager: http://{{ ansible_host }}:{{ alertmanager_port }}
+
+          Quick Commands:
+            Check status:    ansible -i inventory/hosts.yml all -m shell -a "systemctl status node_exporter"
+            View GPU nodes:  ansible -i inventory/hosts.yml gpu_nodes -m shell -a "nvidia-smi"
+
+          Next Steps:
+            1. Access Grafana and explore GPU dashboards
+            2. Configure alert notifications in group_vars/all.yml
+            3. Add more GPU nodes to inventory/hosts.yml
+
+          ============================================================
+      tags: [always]
